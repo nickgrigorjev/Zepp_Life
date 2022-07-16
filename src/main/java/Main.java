@@ -249,6 +249,34 @@ public class Main
             session.close();
         }
     }
+    public static void createTableProducts() throws FileNotFoundException{
+        SessionFactory factory = HibernateUtil.getSessionFactory();
+        Session session = null;
+        BufferedReader reader = new BufferedReader(new FileReader("D:\\Для работы\\Projects\\Zepp Life\\Таблица с калориями.txt"));
+        try{
+            try{
+                reader.readLine();
+                while(reader.ready()){
+                    String[] data = reader.readLine().split(";");
+                    session = factory.getCurrentSession();
+                    session.beginTransaction();
+                    Product product = new Product();
+                    product.setName(data[0]);
+                    product.setCalories(Integer.parseInt(data[1]));
+                    product.setCaloriesPer(Double.parseDouble(data[2]));
+                    product.setLitersOrKilograms(data[3]);
+                    product.setSingularOrPlural(data[4]);
+                    session.save(product);
+                    session.getTransaction().commit();
+                }
+            }catch(IOException e){
+                System.out.println(e.getMessage());
+            }
+        }finally {
+            factory.close();
+            session.close();
+        }
+    }
     public static void writeWorkbook(HSSFWorkbook wb, String fileName) {
         try {
             FileOutputStream fileOut = new FileOutputStream(fileName);
@@ -296,7 +324,7 @@ public class Main
         String[] newFormat = date.split("-");
         return newFormat[2]+"."+newFormat[1]+"."+newFormat[0];
     }
-    private static int randomWithRange(int min, int max)
+    public static int randomWithRange(int min, int max)
     {
         int range = (max - min) + 1;
         return (int)(Math.random() * range) + min;
@@ -386,6 +414,10 @@ public class Main
             value = convertToRussianFormatDate(String.valueOf(training.getTrainingDate()));
             HSSFCell dateMaxCalorieOfTrainingCell = maxCaloriesOfTrainingsRow.createCell(5);
             dateMaxCalorieOfTrainingCell.setCellValue(value);
+            value = String.valueOf(training.getStartExerciseTime());
+            HSSFCell startExcerciseTimeMaxCalorieOfTrainingCell = maxCaloriesOfTrainingsRow.createCell(6);
+            startExcerciseTimeMaxCalorieOfTrainingCell.setCellValue(value);
+
 
             /**Расчет минимального количества затраченных калорий*/
             query = session.createQuery("select a from Training a where a.calorie in (select min(b.calorie) from Training b)");
@@ -406,6 +438,9 @@ public class Main
             value = convertToRussianFormatDate(String.valueOf(training.getTrainingDate()));
             HSSFCell dateMinCalorieOfTrainingCell = minCaloriesOfTrainingsRow.createCell(5);
             dateMinCalorieOfTrainingCell.setCellValue(value);
+            value = String.valueOf(training.getStartExerciseTime());
+            HSSFCell startExcerciseTimeMinCalorieOfTrainingCell = minCaloriesOfTrainingsRow.createCell(6);
+            startExcerciseTimeMinCalorieOfTrainingCell.setCellValue(value);
 
             /**Расчет тренировки с самым низким темпом*/
             query = session.createQuery("select a from Training a where a.pace in (select max(b.pace) from Training b)");
@@ -426,6 +461,9 @@ public class Main
             value = convertToRussianFormatDate(String.valueOf(training.getTrainingDate()));
             HSSFCell dateMaxPaceOfTrainingCell = maxPaceOfTrainingRow.createCell(5);
             dateMaxPaceOfTrainingCell.setCellValue(value);
+            value = String.valueOf(training.getStartExerciseTime());
+            HSSFCell startExcerciseTimeMaxPaceOfTrainingCell = maxPaceOfTrainingRow.createCell(6);
+            startExcerciseTimeMaxPaceOfTrainingCell.setCellValue(value);
 
             /**Расчет тренировки с самым лучшим темпом*/
             query = session.createQuery("select a from Training a where a.pace in (select min(b.pace) from Training b)");
@@ -446,6 +484,9 @@ public class Main
             value = convertToRussianFormatDate(String.valueOf(training.getTrainingDate()));
             HSSFCell dateMinPaceOfTrainingCell = minPaceOfTrainingRow.createCell(5);
             dateMinPaceOfTrainingCell.setCellValue(value);
+            value = String.valueOf(training.getStartExerciseTime());
+            HSSFCell startExcerciseTimeMinPaceOfTrainingCell = minPaceOfTrainingRow.createCell(6);
+            startExcerciseTimeMinPaceOfTrainingCell.setCellValue(value);
 
             /**Расчет тренировки с самым коротким расстоянием*/
             query = session.createQuery("select a from Training a where a.distance in (select min(b.distance) from Training b)");
@@ -466,6 +507,9 @@ public class Main
             value = convertToRussianFormatDate(String.valueOf(training.getTrainingDate()));
             HSSFCell dateMinDistanceOfTrainingCell = minDistanceOfTrainingRow.createCell(5);
             dateMinDistanceOfTrainingCell.setCellValue(value);
+            value = String.valueOf(training.getStartExerciseTime());
+            HSSFCell startExcerciseTimeMinDistanceOfTrainingCell = minDistanceOfTrainingRow.createCell(6);
+            startExcerciseTimeMinDistanceOfTrainingCell.setCellValue(value);
 
             /**Расчет тренировки с самым длинным расстоянием*/
             query = session.createQuery("select a from Training a where a.distance in (select max(b.distance) from Training b)");
@@ -486,6 +530,56 @@ public class Main
             value = convertToRussianFormatDate(String.valueOf(training.getTrainingDate()));
             HSSFCell dateMaxDistanceOfTrainingCell = maxDistanceOfTrainingRow.createCell(5);
             dateMaxDistanceOfTrainingCell.setCellValue(value);
+            value = String.valueOf(training.getStartExerciseTime());
+            HSSFCell startExcerciseTimeMaxDistanceOfTrainingCell = maxDistanceOfTrainingRow.createCell(6);
+            startExcerciseTimeMaxDistanceOfTrainingCell.setCellValue(value);
+
+            /**Расчет самой ранней тренировки*/
+            query = session.createQuery("select a from Training a where a.startExerciseTime in (select min(b.startExerciseTime) from Training b)");
+            training = (Training) query.list().get(0);
+            value = String.valueOf(training.getCalorie());
+            HSSFRow earlyStartExerciseTimeOfTrainingRow = writeSheet.createRow(13);
+            HSSFCell earlyStartExerciseTimeOfTrainingCell = earlyStartExerciseTimeOfTrainingRow.createCell(1);
+            earlyStartExerciseTimeOfTrainingCell.setCellValue(value);
+            value = String.valueOf(training.getPace());
+            HSSFCell paceEarlyStartExerciseTimeOfTrainingCell = earlyStartExerciseTimeOfTrainingRow.createCell(2);
+            paceEarlyStartExerciseTimeOfTrainingCell.setCellValue(value);
+            value = calculateTimeOfExercise((int)(long)training.getTimeSeconds());
+            HSSFCell timeEarlyStartExerciseTimeOfTrainingCell = earlyStartExerciseTimeOfTrainingRow.createCell(3);
+            timeEarlyStartExerciseTimeOfTrainingCell.setCellValue(value);
+            value = String.format("%.2f",((double)(int)(long)training.getDistance())/1000) + " км";
+            HSSFCell distanceEarlyStartExerciseTimeOfTrainingCell = earlyStartExerciseTimeOfTrainingRow.createCell(4);
+            distanceEarlyStartExerciseTimeOfTrainingCell.setCellValue(value);
+            value = convertToRussianFormatDate(String.valueOf(training.getTrainingDate()));
+            HSSFCell dateEarlyStartExerciseTimeOfTrainingCell = earlyStartExerciseTimeOfTrainingRow.createCell(5);
+            dateEarlyStartExerciseTimeOfTrainingCell.setCellValue(value);
+            value = String.valueOf(training.getStartExerciseTime());
+            HSSFCell startExcerciseTimeEarlyStartExerciseTimeOfTrainingCell = earlyStartExerciseTimeOfTrainingRow.createCell(6);
+            startExcerciseTimeEarlyStartExerciseTimeOfTrainingCell.setCellValue(value);
+
+            /**Расчет самой поздней тренировки*/
+            query = session.createQuery("select a from Training a where a.startExerciseTime in (select max(b.startExerciseTime) from Training b)");
+            training = (Training) query.list().get(0);
+            value = String.valueOf(training.getCalorie());
+            HSSFRow lateStartExerciseTimeOfTrainingRow = writeSheet.createRow(14);
+            HSSFCell lateStartExerciseTimeOfTrainingCell = lateStartExerciseTimeOfTrainingRow.createCell(1);
+            lateStartExerciseTimeOfTrainingCell.setCellValue(value);
+            value = String.valueOf(training.getPace());
+            HSSFCell paceLateStartExerciseTimeOfTrainingCell = lateStartExerciseTimeOfTrainingRow.createCell(2);
+            paceLateStartExerciseTimeOfTrainingCell.setCellValue(value);
+            value = calculateTimeOfExercise((int)(long)training.getTimeSeconds());
+            HSSFCell timeLateStartExerciseTimeOfTrainingCell = lateStartExerciseTimeOfTrainingRow.createCell(3);
+            timeLateStartExerciseTimeOfTrainingCell.setCellValue(value);
+            value = String.format("%.2f",((double)(int)(long)training.getDistance())/1000) + " км";
+            HSSFCell distanceLateStartExerciseTimeOfTrainingCell = lateStartExerciseTimeOfTrainingRow.createCell(4);
+            distanceLateStartExerciseTimeOfTrainingCell.setCellValue(value);
+            value = convertToRussianFormatDate(String.valueOf(training.getTrainingDate()));
+            HSSFCell dateLateStartExerciseTimeOfTrainingCell = lateStartExerciseTimeOfTrainingRow.createCell(5);
+            dateLateStartExerciseTimeOfTrainingCell.setCellValue(value);
+            value = String.valueOf(training.getStartExerciseTime());
+            HSSFCell startExcerciseTimeLateStartExerciseTimeOfTrainingCell = lateStartExerciseTimeOfTrainingRow.createCell(6);
+            startExcerciseTimeLateStartExerciseTimeOfTrainingCell.setCellValue(value);
+
 
             Main.writeWorkbook(writeBook,fileInfo);
             session.getTransaction().commit();
