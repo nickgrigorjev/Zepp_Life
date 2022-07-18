@@ -6,6 +6,9 @@ import org.apache.poi.poifs.filesystem.POIFSFileSystem;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.query.Query;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.select.Elements;
 
 import java.io.*;
 import java.sql.Date;
@@ -19,6 +22,7 @@ public class Main
     static final int secondsOfTheDay = 86400;
     static final int secondsOfAnHour = 3600;
     static final int secondsOfTheMinute = 60;
+    private static boolean isSingular;
     private static final String path = "D:\\Для работы\\Projects\\Zepp Life\\SPORT.csv";
     private static final String fileInfo = "D:\\Для работы\\Projects\\Zepp Life\\info.xls";
     public static void addCitiesToDatabase(){
@@ -50,24 +54,6 @@ public class Main
             session.close();
         }
     }
-    public static String calculateRunningPace(int distance, double time) {
-        String pace=null;
-        String min = "";
-        String sec = "";
-        double minute = (time/60)/distance*1000;
-        double seconds = (minute-(int)minute)*60;
-        if(minute>=0&&minute<10) {min = "0"+(int)minute;} else {min = String.valueOf((int)minute);}
-        if(seconds>=0&&seconds<10) {sec = "0"+(int)seconds;} else {sec = String.valueOf((int)seconds);}
-        pace="00:"+min+":"+sec;
-        return pace;
-    }
-    public static String transformTimeToLocalTime(String time){
-        String[] startExerciseTime= time.split(":");
-        int hour = Integer.parseInt(startExerciseTime[0]);
-        if(hour>=0&&hour<10){time = "0"+(hour+4)+":"+startExerciseTime[1]+":"+startExerciseTime[2];}
-        else{time = (hour+4)+":"+startExerciseTime[1]+":"+startExerciseTime[2];}
-        return time;
-    }
     public static void showDataInConsole() throws FileNotFoundException{
         SessionFactory factory = HibernateUtil.getSessionFactory();
         Session session = null;
@@ -88,16 +74,16 @@ public class Main
                 String[] result = reader.readLine().split(",");
                 if(Integer.parseInt(result[0])!=9){
                     /**
-                    date[0]-год
-                    date[1]-месяц
-                    date[2]-день
-                    */
+                     date[0]-год
+                     date[1]-месяц
+                     date[2]-день
+                     */
                     String[] date = result[1].substring(0,10).split("-");
                     /**
-                    startExerciseTime[0]-часы начала тренировки по гринвичу, необходимо прибавить 4 чтобы время стало Самарским
-                    startExerciseTime[1]-минуты
-                    startExerciseTime[2]-секунды
-                    */
+                     startExerciseTime[0]-часы начала тренировки по гринвичу, необходимо прибавить 4 чтобы время стало Самарским
+                     startExerciseTime[1]-минуты
+                     startExerciseTime[2]-секунды
+                     */
                     String startExerciseTime = result[1].substring(11,19);
                     List<Integer> dataOfTraining = new ArrayList<>();
                     List<Integer> dataOfTraining2 = new ArrayList<>();
@@ -164,7 +150,7 @@ public class Main
         try{
             reader.readLine();//чтение линии для того, чтобы пропустить заголовки
             while(reader.ready()){
-                /**
+                /*
                  result[1]-дата + время начала тренировки
                  result[2]-время затраченное на тренировку в секундах
                  result[5]-дистанция тренировки
@@ -277,16 +263,6 @@ public class Main
             session.close();
         }
     }
-    public static void writeWorkbook(HSSFWorkbook wb, String fileName) {
-        try {
-            FileOutputStream fileOut = new FileOutputStream(fileName);
-            wb.write(fileOut);
-            fileOut.close();
-        }
-        catch (Exception e) {
-            //Обработка ошибки
-        }
-    }
     public static HSSFWorkbook readWorkbook(String filename) {
         try {
             POIFSFileSystem fs = new POIFSFileSystem(new FileInputStream(filename));
@@ -295,6 +271,34 @@ public class Main
         }
         catch (Exception e) {
             return null;
+        }
+    }
+    public static String calculateRunningPace(int distance, double time) {
+        String pace=null;
+        String min = "";
+        String sec = "";
+        double minute = (time/60)/distance*1000;
+        double seconds = (minute-(int)minute)*60;
+        if(minute>=0&&minute<10) {min = "0"+(int)minute;} else {min = String.valueOf((int)minute);}
+        if(seconds>=0&&seconds<10) {sec = "0"+(int)seconds;} else {sec = String.valueOf((int)seconds);}
+        pace="00:"+min+":"+sec;
+        return pace;
+    }
+    public static String transformTimeToLocalTime(String time){
+        String[] startExerciseTime= time.split(":");
+        int hour = Integer.parseInt(startExerciseTime[0]);
+        if(hour>=0&&hour<10){time = "0"+(hour+4)+":"+startExerciseTime[1]+":"+startExerciseTime[2];}
+        else{time = (hour+4)+":"+startExerciseTime[1]+":"+startExerciseTime[2];}
+        return time;
+    }
+    public static void writeWorkbook(HSSFWorkbook wb, String fileName) {
+        try {
+            FileOutputStream fileOut = new FileOutputStream(fileName);
+            wb.write(fileOut);
+            fileOut.close();
+        }
+        catch (Exception e) {
+            //Обработка ошибки
         }
     }
     public static String calculateTimeOfExercise (int x){
@@ -328,6 +332,77 @@ public class Main
     {
         int range = (max - min) + 1;
         return (int)(Math.random() * range) + min;
+    }
+    public static String declensionWord(String word, boolean isSingular,Case caseOfWord){
+        Elements elements;
+        String out = "";
+        String url = "https://sklonili.ru/";
+        try {
+            Document doc = Jsoup.connect(url+word).userAgent("YaBrowser/22.7.0.1842").get();
+            elements = doc.getElementsByAttributeValue("data-title","Склонение");
+//            System.out.println(elements);
+//            System.out.println(elements.size());
+            if(elements.size()==0){
+                out = word;
+            }
+            else{
+                if(isSingular) {
+//                    out = elements.get(1).text();
+                    switch (caseOfWord){
+                        case IMENIT:
+                            out = elements.get(0).text();
+                            break;
+                        case RODIT:
+                            out = elements.get(1).text();
+                            break;
+                        case DAT:
+                            out = elements.get(2).text();
+                            break;
+                        case VINIT:
+                            out = elements.get(3).text();
+                            break;
+                        case TVORIT:
+                            out = elements.get(4).text();
+                            break;
+                        case PREDLOJ:
+                            out = elements.get(5).text();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+                else {out = elements.get(7).text();
+                    switch (caseOfWord){
+                        case IMENIT:
+                            out = elements.get(6).text();
+                            break;
+                        case RODIT:
+                            out = elements.get(7).text();
+                            break;
+                        case DAT:
+                            out = elements.get(8).text();
+                            break;
+                        case VINIT:
+                            out = elements.get(9).text();
+                            break;
+                        case TVORIT:
+                            out = elements.get(10).text();
+                            break;
+                        case PREDLOJ:
+                            out = elements.get(11).text();
+                            break;
+                        default:
+                            break;
+                    }
+                }
+            }
+            elements.clear();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return out;
     }
     private static void refreshTrainingsData() {
 
@@ -394,6 +469,29 @@ public class Main
             HSSFRow commonCaloriesOfTrainingsRow = writeSheet.createRow(4);
             HSSFCell commonCaloriesOfTrainingsCell = commonCaloriesOfTrainingsRow.createCell(1);
             commonCaloriesOfTrainingsCell.setCellValue(value);
+            value="";
+            Product product;
+            query = session.createQuery("select e.id from Product e");
+            query = session.createQuery("select e from Product e where e.id="+query.list().get(Main.randomWithRange(0,query.list().size())));
+            product = (Product)query.list().get(0);
+            System.out.println(product.getName());
+            if(product.getSingularOrPlural().equals("singular")) {isSingular = true;}
+            else{isSingular = false;}
+            if(product.getName().contains(" ")){
+                String[] data = product.getName().split(" ");
+                for (String datum : data) {
+                    value = value + declensionWord(datum, isSingular, Case.RODIT) + " ";
+                }
+            }
+            else{
+                value = declensionWord(product.getName(),isSingular,Case.RODIT);
+            }
+            String newValue = "Столько же калорий содержится в "+(String.format("%.2f",39763/ product.getCaloriesPer())) +" "+
+                    declensionWord(product.getLitersOrKilograms(), false,Case.PREDLOJ) +" " + value;
+            System.out.println(newValue);
+            HSSFCell infoCommonCaloriesOfTrainingsCell = commonCaloriesOfTrainingsRow.createCell(5);
+            infoCommonCaloriesOfTrainingsCell.setCellValue(newValue);
+
 
             /**Расчет максимального количества затраченных калорий*/
             query = session.createQuery("select a from Training a where a.calorie in (select max(b.calorie) from Training b)");
@@ -589,7 +687,7 @@ public class Main
         }
 
     }
-    public static void main(String[] args) throws FileNotFoundException {
+    public static void main(String[] args) {
 //        updateDatabase();
         refreshTrainingsData();
     }

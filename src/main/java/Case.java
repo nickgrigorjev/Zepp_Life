@@ -1,0 +1,3 @@
+public enum Case {
+    IMENIT,RODIT,DAT,VINIT,TVORIT,PREDLOJ
+}
