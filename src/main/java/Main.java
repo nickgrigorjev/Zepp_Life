@@ -231,8 +231,8 @@ public class Main
             }
             System.out.println("внесено в базу данных новых тренировок: "+countNewTrainings);//Количество внесенных тренировок
         }finally {
-            factory.close();
-            session.close();
+//            factory.close();
+//            session.close();
         }
     }
     public static void createTableProducts() throws FileNotFoundException{
@@ -687,8 +687,8 @@ public class Main
         }
 
     }
-    public static void main(String[] args) {
-//        updateDatabase();
+    public static void main(String[] args) throws FileNotFoundException {
+        updateDatabase();
         refreshTrainingsData();
     }
 
